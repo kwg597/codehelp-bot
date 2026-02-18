@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeHelp Bot - Dark Theme</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Animated background stars -->
+    <div class="stars"></div>
+    <div class="twinkling"></div>
+    
+    <div class="container">
+        <!-- Header with neon effect -->
+        <div class="header">
+            <h1 class="glow">&lt;CodeHelp Bot/&gt;</h1>
+            <p class="subtitle">Your <span class="highlight">Python</span> Coding Assistant</p>
+            <div class="badge-container">
+                <span class="badge">🐍 Python</span>
+                <span class="badge">⚡ Beginner Friendly</span>
+                <span class="badge">📝 Code Examples</span>
+                <span class="badge">🚀 24/7 Help</span>
+            </div>
+        </div>
+
+        <!-- Chat Messages Area -->
+        <div class="chat-container" id="chatContainer">
+            <div class="message bot">
+                <div class="avatar">
+                    <div class="robot">🤖</div>
+                </div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="name">CodeHelp Bot</span>
+                        <span class="status">online</span>
+                    </div>
+                    <div class="message-text">
+                        Hi! I'm your coding assistant. Ask me anything about Python! 🐍
+                        <div class="hint">Try: "what is python", "how to print", "how to make a list"</div>
+                    </div>
+                    <div class="message-time">just now</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Questions Grid -->
+        <div class="quick-grid">
+            <button class="quick-btn" onclick="ask('what is python')">
+                <span class="btn-icon">🐍</span>
+                <span class="btn-text">What is Python?</span>
+            </button>
+            <button class="quick-btn" onclick="ask('how to print in python')">
+                <span class="btn-icon">🖨️</span>
+                <span class="btn-text">How to print?</span>
+            </button>
+            <button class="quick-btn" onclick="ask('what are variables')">
+                <span class="btn-icon">📦</span>
+                <span class="btn-text">Variables</span>
+            </button>
+            <button class="quick-btn" onclick="ask('how to make a list')">
+                <span class="btn-icon">📋</span>
+                <span class="btn-text">Lists</span>
+            </button>
+            <button class="quick-btn" onclick="ask('what is a loop')">
+                <span class="btn-icon">🔄</span>
+                <span class="btn-text">Loops</span>
+            </button>
+            <button class="quick-btn" onclick="ask('how to define a function')">
+                <span class="btn-icon">⚙️</span>
+                <span class="btn-text">Functions</span>
+            </button>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Ask a Python question..." autocomplete="off">
+            <button id="sendBtn" onclick="sendMessage()">
+                <span>Send</span>
+                <span class="send-icon">➤</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chatContainer');
+        const userInput = document.getElementById('userInput');
+
+        function ask(question) {
+            userInput.value = question;
+            sendMessage();
+        }
+
+        function addMessage(sender, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            if (sender === 'bot') {
+                messageDiv.innerHTML = `
+                    <div class="avatar">
+                        <div class="robot">🤖</div>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="name">CodeHelp Bot</span>
+                            <span class="status">online</span>
+                        </div>
+                        <div class="message-text">${text.replace(/\n/g, '<br>').replace(/```python/g, '<pre class="code-block">').replace(/```/g, '</pre>')}</div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="message-content user-content">
+                        <div class="message-header">
+                            <span class="name">You</span>
+                        </div>
+                        <div class="message-text">${text}</div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                    <div class="avatar">
+                        <div class="user-avatar">👤</div>
+                    </div>
+                `;
+            }
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            addMessage('user', message);
+            userInput.value = '';
+
+            // Show typing indicator
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot typing';
+            typingDiv.id = 'typing';
+            typingDiv.innerHTML = `
+                <div class="avatar">
+                    <div class="robot">🤖</div>
+                </div>
+                <div class="message-content">
+                    <div class="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            `;
+            chatContainer.appendChild(typingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({message: message})
+                });
+
+                const data = await response.json();
+                
+                document.getElementById('typing')?.remove();
+                addMessage('bot', data.response);
+
+            } catch (error) {
+                document.getElementById('typing')?.remove();
+                addMessage('bot', 'Sorry, connection error. Please try again.');
+            }
+        }
+
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>
